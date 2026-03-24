@@ -1,0 +1,36 @@
+.invalid-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.invalid-icon {
+  font-size: 48px;
+  color: #e53935;
+}
+
+.invalid-container h2 {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.invalid-container p {
+  color: #7e7e7e;
+}
+
+.invalid-container button {
+  padding: 10px 24px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  background: white;
+  margin-top: 8px;
+  transition: background 0.2s;
+}
+
+.invalid-container button:hover {
+  background: #f4f4f4;
+}
