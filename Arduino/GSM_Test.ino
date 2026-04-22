@@ -5,29 +5,31 @@ SoftwareSerial sim800(A1, A0); // RX=A1, TX=A0
 void setup() {
   Serial.begin(9600);
   sim800.begin(9600);
-  Serial.println("=== SIM800L Test ===");
-  delay(3000); // wait for module to boot
+  Serial.println("=== Network Test ===");
+  delay(3000);
 
   sendAT("AT");
-  delay(1000);
   sendAT("AT+CSQ");
-  delay(1000);
   sendAT("AT+CCID");
-  delay(1000);
   sendAT("AT+CREG?");
-  delay(1000);
+  sendAT("AT+COPS?");
 }
 
 void loop() {
-  if (sim800.available()) Serial.write(sim800.read());
-  if (Serial.available()) sim800.write(Serial.read());
+  // check every 5 seconds
+  static unsigned long last = 0;
+  if (millis() - last >= 5000) {
+    last = millis();
+    Serial.println("--- Checking ---");
+    sendAT("AT+CSQ");
+    sendAT("AT+CREG?");
+  }
 }
 
 void sendAT(String cmd) {
-  Serial.print("Sending: ");
-  Serial.println(cmd);
+  Serial.print(">> "); Serial.println(cmd);
   sim800.println(cmd);
-  delay(500);
+  delay(1000);
   while (sim800.available()) {
     Serial.write(sim800.read());
   }

@@ -131,7 +131,7 @@ export default function Home({ email, photoURL }: { email: string; photoURL: str
           toast.dismiss();
           toast("🚗 Vehicle moved " + (dist >= 1000
             ? (dist / 1000).toFixed(1) + " km"
-            : dist.toFixed(0) + " m") + " from last position", { duration: 500000, }
+            : dist.toFixed(0) + " m") + " from last position", { duration: 5000, }
           );
         }
       }
