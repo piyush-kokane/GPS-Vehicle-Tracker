@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+  <title>GPS Tracker</title>
+
+  <!-- External stylesheet -->
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- Firebase SDKs (compat / CDN) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
+  <!-- Firebase config (keep this file out of public repos) -->
+  <script src="config.js"></script>
+</head>
+<body>
+
+  <h2>📍 GPS Vehicle Tracker</h2>
+  <div class="subtitle">Secured with Google Sign-In → Firebase</div>
+
+  <!-- ── AUTH SCREEN ── -->
+  <div id="authScreen">
+    <div class="auth-card">
+      <div class="auth-icon">🔐</div>
+      <div class="auth-title">Sign in to start tracking</div>
+      <div class="auth-desc">
+        Your location is stored under your own account.<br>
+        No shared secrets — access is controlled by Firebase Auth.
+      </div>
+
+      <button class="btn-google" id="googleSignInBtn" onclick="signInWithGoogle()">
+        <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+          <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.2l6.8-6.8C35.8 2.5 30.2 0 24 0 14.7 0 6.8 5.4 3 13.3l7.9 6.1C12.8 13.2 17.9 9.5 24 9.5z"/>
+          <path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8C43.7 37.3 46.5 31.3 46.5 24.5z"/>
+          <path fill="#FBBC05" d="M10.9 28.6A14.6 14.6 0 0 1 9.5 24c0-1.6.3-3.1.8-4.6L2.4 13.3A23.9 23.9 0 0 0 0 24c0 3.9.9 7.5 2.6 10.8l8.3-6.2z"/>
+          <path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.5-5.8c-2.1 1.4-4.8 2.2-8.4 2.2-6.1 0-11.2-3.7-13.1-9l-7.9 6.1C6.8 42.6 14.7 48 24 48z"/>
+        </svg>
+        Continue with Google
+      </button>
+
+      <div class="auth-status" id="authStatus"></div>
+    </div>
+  </div>
+
+  <!-- ── TRACKER SCREEN ── -->
+  <div id="trackerScreen">
+
+    <div class="user-bar">
+      <div class="user-avatar-placeholder" id="avatarPlaceholder">👤</div>
+      <img class="user-avatar" id="userAvatar" src="" alt="" style="display:none"/>
+      <div class="user-info">
+        <div class="user-name"  id="userName">—</div>
+        <div class="user-email" id="userEmail">—</div>
+      </div>
+      <button class="btn-signout" onclick="signOut()">Sign out</button>
+    </div>
+
+    <div class="card">
+
+      <div class="status-row">
+        <div class="dot idle" id="dot"></div>
+        <span id="statusText">Press Start to begin tracking</span>
+      </div>
+
+      <div class="coords">
+        <div class="coord-row">
+          <span class="coord-label">Latitude</span>
+          <span class="coord-val stale" id="latVal">—</span>
+        </div>
+        <div class="coord-row">
+          <span class="coord-label">Longitude</span>
+          <span class="coord-val stale" id="lonVal">—</span>
+        </div>
+        <div class="coord-row">
+          <span class="coord-label">Accuracy</span>
+          <span class="coord-val stale" id="accVal">—</span>
+        </div>
+        <div class="coord-row">
+          <span class="coord-label">Speed</span>
+          <span class="coord-val stale" id="spdVal">—</span>
+        </div>
+        <div class="coord-row">
+          <span class="coord-label">Last fix</span>
+          <span class="coord-val stale" id="timeVal">—</span>
+        </div>
+      </div>
+
+      <div class="badge-row">
+        <div class="badge">
+          <span class="badge-val green"  id="sentCount">0</span>
+          <span class="badge-label">Sent ✔</span>
+        </div>
+        <div class="badge">
+          <span class="badge-val red"    id="failCount">0</span>
+          <span class="badge-label">Failed ✘</span>
+        </div>
+        <div class="badge">
+          <span class="badge-val yellow" id="accBadge">—</span>
+          <span class="badge-label">Accuracy m</span>
+        </div>
+      </div>
+
+      <div class="log" id="logBox">No data sent yet.</div>
+
+      <div class="divider"></div>
+
+      <div class="interval-row">
+        <span>Send interval</span>
+        <select id="intervalSelect">
+          <option value="1000">Every 1 sec</option>
+          <option value="3000">Every 3 sec</option>
+          <option value="5000" selected>Every 5 sec</option>
+          <option value="10000">Every 10 sec</option>
+          <option value="30000">Every 30 sec</option>
+          <option value="60000">Every 1 min</option>
+        </select>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-start" id="startBtn" onclick="startTracking()">▶ Start</button>
+        <button class="btn btn-stop"  id="stopBtn"  onclick="stopTracking()">■ Stop</button>
+      </div>
+
+    </div>
+
+    <div class="uid-note" id="uidNote"></div>
+
+  </div>
+
+  <script>
+    // ── Firebase init (config loaded from config.js) ───────────
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db   = firebase.database();
+
+    let currentUser  = null;
+    let dbPath       = null;
+    let watchId      = null;
+    let sendInterval = null;
+    let lastCoords   = null;
+    let sentCount    = 0;
+    let failCount    = 0;
+
+    // Converts email → safe Firebase key  (dots → underscores)
+    function emailToKey(email) {
+      return email.replace(/\./g, '_');
+    }
+
+    // ── Auth state ──────────────────────────────────────────────
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        currentUser = user;
+        dbPath      = emailToKey(user.email);
+        showTracker(user);
+      } else {
+        currentUser = null;
+        dbPath      = null;
+        showAuth();
+      }
+    });
+
+    async function signInWithGoogle() {
+      document.getElementById('authStatus').textContent = '';
+      document.getElementById('googleSignInBtn').disabled = true;
+      try {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        await auth.signInWithPopup(provider);
+      } catch (err) {
+        document.getElementById('authStatus').textContent = '✗ ' + (err.message || 'Sign-in failed');
+        document.getElementById('googleSignInBtn').disabled = false;
+      }
+    }
+
+    async function signOut() {
+      stopTracking();
+      await auth.signOut();
+    }
+
+    function showAuth() {
+      document.getElementById('authScreen').style.display    = 'flex';
+      document.getElementById('trackerScreen').style.display = 'none';
+      document.getElementById('googleSignInBtn').disabled    = false;
+      document.getElementById('authStatus').textContent      = '';
+    }
+
+    function showTracker(user) {
+      document.getElementById('authScreen').style.display    = 'none';
+      document.getElementById('trackerScreen').style.display = 'flex';
+
+      document.getElementById('userName').textContent  = user.displayName || 'User';
+      document.getElementById('userEmail').textContent = user.email || '';
+
+      if (user.photoURL) {
+        const img = document.getElementById('userAvatar');
+        img.src = user.photoURL;
+        img.style.display = '';
+        document.getElementById('avatarPlaceholder').style.display = 'none';
+      }
+
+      document.getElementById('uidNote').innerHTML =
+        `DB path: <code>${dbPath}/current_loc</code>`;
+    }
+
+    // ── DOM refs ────────────────────────────────────────────────
+    const dot         = document.getElementById('dot');
+    const statusText  = document.getElementById('statusText');
+    const latVal      = document.getElementById('latVal');
+    const lonVal      = document.getElementById('lonVal');
+    const accVal      = document.getElementById('accVal');
+    const spdVal      = document.getElementById('spdVal');
+    const timeVal     = document.getElementById('timeVal');
+    const logBox      = document.getElementById('logBox');
+    const startBtn    = document.getElementById('startBtn');
+    const stopBtn     = document.getElementById('stopBtn');
+    const sentEl      = document.getElementById('sentCount');
+    const failEl      = document.getElementById('failCount');
+    const accBadge    = document.getElementById('accBadge');
+    const intervalSel = document.getElementById('intervalSelect');
+
+    // ── Helpers ─────────────────────────────────────────────────
+    function setStatus(state, msg) {
+      dot.className = 'dot ' + state;
+      statusText.textContent = msg;
+    }
+    function setLog(html) { logBox.innerHTML = html; }
+
+    // ── GPS callbacks ───────────────────────────────────────────
+    function onPosition(pos) {
+      lastCoords = pos.coords;
+      const c = pos.coords;
+      latVal.textContent   = c.latitude.toFixed(7);
+      lonVal.textContent   = c.longitude.toFixed(7);
+      accVal.textContent   = c.accuracy.toFixed(1) + ' m';
+      accBadge.textContent = c.accuracy.toFixed(0);
+      spdVal.textContent   = c.speed != null ? (c.speed * 3.6).toFixed(1) + ' km/h' : '—';
+      timeVal.textContent  = new Date().toLocaleTimeString();
+      [latVal, lonVal, accVal, spdVal, timeVal].forEach(el => el.classList.remove('stale'));
+      setStatus('ok', 'GPS locked · Tracking active');
+    }
+
+    function onGPSError(err) {
+      const msgs = {
+        1: 'Permission denied — allow location in browser',
+        2: 'GPS unavailable — move to open sky',
+        3: 'GPS timed out — retrying…'
+      };
+      setStatus('error', msgs[err.code] || 'GPS error');
+      setLog(`<span class="err">✗ GPS: ${msgs[err.code] || err.message}</span>`);
+    }
+
+    // ── Firebase send ───────────────────────────────────────────
+    async function sendToFirebase() {
+      if (!lastCoords) { setLog('<span class="warn">⚠ Waiting for GPS fix…</span>'); return; }
+      if (!currentUser || !dbPath) { setLog('<span class="err">✗ Not signed in</span>'); stopTracking(); return; }
+
+      const c   = lastCoords;
+      const now = new Date();
+
+      const payload = {
+        lat:      c.latitude,
+        lng:      c.longitude,
+        spd:      c.speed != null ? parseFloat((c.speed * 3.6).toFixed(1)) : 0,
+        alt:      c.altitude != null ? parseFloat(c.altitude.toFixed(1)) : 0,
+        accuracy: parseFloat(c.accuracy.toFixed(1)),
+        time:     now.toLocaleDateString('en-GB', { weekday:'short', day:'2-digit', month:'short' })
+                  + ' ' + now.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit', second:'2-digit', hour12: false }),
+      };
+
+      try {
+        await db.ref(`${dbPath}/current_loc`).set(payload);
+        sentCount++;
+        sentEl.textContent = sentCount;
+        setLog(`<span class="ok">✓ Sent #${sentCount}</span> · ${c.latitude.toFixed(5)}, ${c.longitude.toFixed(5)} · ${now.toLocaleTimeString()}`);
+      } catch (err) {
+        failCount++;
+        failEl.textContent = failCount;
+        setLog(`<span class="err">✗ ${err.message}</span>`);
+      }
+    }
+
+    // ── Tracking control ────────────────────────────────────────
+    function startTracking() {
+      if (!navigator.geolocation) { setStatus('error', 'Geolocation not supported'); return; }
+      setStatus('waiting', 'Requesting GPS permission…');
+      watchId = navigator.geolocation.watchPosition(onPosition, onGPSError, {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 0
+      });
+      sendInterval = setInterval(sendToFirebase, parseInt(intervalSel.value));
+      startBtn.style.display = 'none';
+      stopBtn.style.display  = '';
+      intervalSel.disabled   = true;
+    }
+
+    function stopTracking() {
+      if (watchId !== null)      { navigator.geolocation.clearWatch(watchId); watchId = null; }
+      if (sendInterval !== null) { clearInterval(sendInterval); sendInterval = null; }
+      setStatus('idle', 'Tracking stopped');
+      startBtn.style.display = '';
+      stopBtn.style.display  = 'none';
+      intervalSel.disabled   = false;
+      [latVal, lonVal, accVal, spdVal, timeVal].forEach(el => el.classList.add('stale'));
+    }
+
+    // ── Wake lock ───────────────────────────────────────────────
+    let wakeLock = null;
+    async function requestWakeLock() {
+      if ('wakeLock' in navigator) {
+        try { wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {}
+      }
+    }
+    requestWakeLock();
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') requestWakeLock();
+    });
+  </script>
+
+</body>
+</html>
